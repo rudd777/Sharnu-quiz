@@ -1,0 +1,40 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev
+        pip install buildozer cython
+
+    - name: Init buildozer
+      run: |
+        yes | buildozer init
+
+    - name: Edit spec
+      run: |
+        sed -i 's/^requirements =.*/requirements = python3,kivy/' buildozer.spec
+        sed -i 's/^title =.*/title = Flag Game/' buildozer.spec
+        sed -i 's/^package.name =.*/package.name = flaggame/' buildozer.spec
+        sed -i 's/^package.domain =.*/package.domain = org.test/' buildozer.spec
+
+    - name: Build APK
+      run: |
+        yes | buildozer -v android debug
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: apk
+        path: bin/*.apk
